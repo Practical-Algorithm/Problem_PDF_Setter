@@ -554,6 +554,52 @@
         background: #f9fafb;
       }
 
+      /* ── Template editor ───────────────────────────────────────────────────── */
+      #template-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 200;
+        background: rgba(0, 0, 0, 0.55);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #template-overlay.hidden { display: none; }
+      #template-modal {
+        background: #fff;
+        border-radius: 10px;
+        padding: 20px 24px;
+        width: 860px;
+        max-width: 96vw;
+        height: 88vh;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+      #template-modal h2 { font-size: 17px; font-weight: 700; flex-shrink: 0; }
+      #template-editor {
+        flex: 1;
+        width: 100%;
+        font-family: "Fira Code", "Cascadia Code", "Consolas", monospace;
+        font-size: 12.5px;
+        line-height: 1.5;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        padding: 10px 12px;
+        resize: none;
+        outline: none;
+        tab-size: 2;
+      }
+      #template-editor:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,.2); }
+      .template-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      #template-status { font-size: 13px; color: #6b7280; align-self: center; margin-right: auto; }
+
       /* ── Toast ──────────────────────────────────────────────────────────────── */
       #toast-container {
         position: fixed;
@@ -594,6 +640,13 @@
             onclick="toggleWarningPanel()"
           >
             ⚠ 0
+          </button>
+          <button
+            id="btn-edit-template"
+            class="btn-header"
+            onclick="openTemplateEditor()"
+          >
+            Edit Template
           </button>
           <button
             id="btn-clear-cache"
@@ -653,6 +706,19 @@
           >
             Cancel
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Template editor overlay ───────────────────────────────────────── -->
+    <div id="template-overlay" class="hidden">
+      <div id="template-modal">
+        <h2>Edit Problem Template (problem.html)</h2>
+        <textarea id="template-editor" spellcheck="false"></textarea>
+        <div class="template-footer">
+          <span id="template-status"></span>
+          <button class="btn-bundle-action" style="background:#fff;border-color:#d1d5db;color:#374151;" onclick="closeTemplateEditor()">Cancel</button>
+          <button class="btn-bundle-action" style="background:#2563eb;border-color:#1d4ed8;color:#fff;" onclick="saveTemplate()">Save &amp; Apply</button>
         </div>
       </div>
     </div>
@@ -1186,6 +1252,58 @@
           btn.className = "btn-header severity-warning";
         }
       }
+
+      // ── Template editor ───────────────────────────────────────────────────────
+      async function openTemplateEditor() {
+        const overlay = document.getElementById("template-overlay");
+        const editor  = document.getElementById("template-editor");
+        const status  = document.getElementById("template-status");
+        status.textContent = "Loading…";
+        overlay.classList.remove("hidden");
+        try {
+          const r = await fetch("/api/template");
+          if (!r.ok) throw new Error(await r.text());
+          const d = await r.json();
+          editor.value = d.content;
+          status.textContent = "";
+        } catch (e) {
+          status.textContent = "Error loading template: " + e.message;
+        }
+        editor.focus();
+      }
+
+      function closeTemplateEditor() {
+        document.getElementById("template-overlay").classList.add("hidden");
+      }
+
+      async function saveTemplate() {
+        const editor = document.getElementById("template-editor");
+        const status = document.getElementById("template-status");
+        status.textContent = "Saving…";
+        try {
+          const r = await fetch("/api/template", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content: editor.value }),
+          });
+          if (!r.ok) throw new Error(await r.text());
+          status.textContent = "Saved. PDF cache cleared.";
+          showToast("Template saved. PDF cache cleared.");
+          setTimeout(() => { status.textContent = ""; }, 3000);
+        } catch (e) {
+          status.textContent = "Error: " + e.message;
+        }
+      }
+
+      // Tab key inserts spaces instead of losing focus
+      document.getElementById("template-editor").addEventListener("keydown", function(e) {
+        if (e.key === "Tab") {
+          e.preventDefault();
+          const s = this.selectionStart;
+          this.value = this.value.slice(0, s) + "  " + this.value.slice(this.selectionEnd);
+          this.selectionStart = this.selectionEnd = s + 2;
+        }
+      });
 
       // ── Init ──────────────────────────────────────────────────────────────────
       loadProblems();

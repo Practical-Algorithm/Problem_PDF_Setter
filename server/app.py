@@ -22,7 +22,7 @@ from notion_client_wrapper import (
     NotionClientWrapper,
     _notion_call_with_retry,
 )
-from pdf_generator import generate_pdf
+from pdf_generator import generate_pdf, TEMPLATES_DIR
 
 # ---------------------------------------------------------------------------
 # App & auth setup
@@ -294,6 +294,36 @@ def bundle_download():
         as_attachment=True,
         download_name="contest_problems.zip",
     )
+
+
+# ---------------------------------------------------------------------------
+# Template editor
+# ---------------------------------------------------------------------------
+
+_TEMPLATE_FILE = os.path.join(TEMPLATES_DIR, "problem.html")
+
+
+@app.route("/api/template", methods=["GET"])
+@auth.login_required
+def get_template():
+    with open(_TEMPLATE_FILE, "r", encoding="utf-8") as f:
+        content = f.read()
+    return jsonify({"content": content})
+
+
+@app.route("/api/template", methods=["PUT"])
+@auth.login_required
+def update_template():
+    data = request.get_json(force=True) or {}
+    content = data.get("content")
+    if content is None:
+        return jsonify({"error": "content is required"}), 400
+    with open(_TEMPLATE_FILE, "w", encoding="utf-8") as f:
+        f.write(content)
+    # Invalidate PDF cache so next generation uses the new template
+    with _cache_lock:
+        _pdf_cache.clear()
+    return jsonify({"ok": True})
 
 
 # ---------------------------------------------------------------------------

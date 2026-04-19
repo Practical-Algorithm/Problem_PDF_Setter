@@ -20,8 +20,8 @@ _LABELS = {
         "input":       "ข้อมูลนำเข้า",
         "output":      "ข้อมูลส่งออก",
         "constraints": "การให้คะแนน",
-        "examples":    "Sample Input/Output",
-        "notes":       "หมายเหตุ",
+        "examples":    "ตัวอย่างข้อมูลนำเข้าและข้อมูลส่งออก",
+        "notes":       "คำอธิบาย",
     },
     "en": {
         "statement":   "Problem Statement",
