@@ -22,7 +22,7 @@ from notion_client_wrapper import (
     NotionClientWrapper,
     _notion_call_with_retry,
 )
-from pdf_generator import generate_pdf, TEMPLATES_DIR
+from pdf_generator import generate_pdf, TEMPLATES_DIR, CONTEST_NAME
 
 # ---------------------------------------------------------------------------
 # App & auth setup
@@ -104,7 +104,7 @@ def validate_startup() -> None:
 @app.route("/")
 @auth.login_required
 def index():
-    return render_template("index.html")
+    return render_template("index.html", contest_name=CONTEST_NAME)
 
 
 @app.route("/api/problems")

@@ -5,7 +5,10 @@ services:
       - "127.0.0.1:5000:5000"   # Bind to localhost only — Caddy handles public access
     env_file:
       - .env
-    restart: unless-stopped
+    restart: no
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     volumes:
       - ./server/templates:/app/templates   # Live-reload templates without rebuild
       - ./server/static:/app/static         # Supply logo.png from host filesystem
