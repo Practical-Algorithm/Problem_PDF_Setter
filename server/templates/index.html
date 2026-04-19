@@ -1,637 +1,1144 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Contest PDF Generator</title>
-<style>
-/* ── Reset & base ──────────────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; background: #f3f4f6; color: #111827; min-height: 100vh; }
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Contest PDF Generator</title>
+    <style>
+      /* ── Reset & base ──────────────────────────────────────────────────────── */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 14px;
+        background: #f3f4f6;
+        color: #111827;
+        min-height: 100vh;
+      }
 
-/* ── Layout ────────────────────────────────────────────────────────────── */
-#app-header {
-  position: sticky; top: 0; z-index: 100;
-  background: #1e3a5f; color: #fff;
-  padding: 0 24px;
-  box-shadow: 0 2px 8px rgba(0,0,0,.25);
-}
-.header-top {
-  display: flex; align-items: center; justify-content: space-between;
-  height: 56px; gap: 12px;
-}
-#app-title { font-size: 18px; font-weight: 700; white-space: nowrap; }
-.header-controls { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+      /* ── Layout ────────────────────────────────────────────────────────────── */
+      #app-header {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: #1e3a5f;
+        color: #fff;
+        padding: 0 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+      }
+      .header-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 56px;
+        gap: 12px;
+      }
+      #app-title {
+        font-size: 18px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+      .header-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
 
-/* warning panel */
-#warning-panel {
-  background: #fff; color: #111827;
-  border-top: 1px solid #d1d5db;
-  max-height: 320px; overflow-y: auto;
-  padding: 8px 0;
-}
-#warning-panel.hidden { display: none; }
-#warning-panel-list { list-style: none; display: flex; flex-direction: column; gap: 6px; padding: 0 8px; }
+      /* warning panel */
+      #warning-panel {
+        background: #fff;
+        color: #111827;
+        border-top: 1px solid #d1d5db;
+        max-height: 320px;
+        overflow-y: auto;
+        padding: 8px 0;
+      }
+      #warning-panel.hidden {
+        display: none;
+      }
+      #warning-panel-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 0 8px;
+      }
 
-.warning-entry {
-  display: flex; flex-direction: column;
-  background: #fffbeb; border: 1px solid #fcd34d; border-radius: 6px;
-  padding: 8px 10px; font-size: 13px; gap: 2px;
-}
-.warning-entry.error { background: #fef2f2; border-color: #fca5a5; }
-.warning-entry-header { display: flex; align-items: baseline; gap: 6px; }
-.warning-sev-icon { font-size: 14px; flex-shrink: 0; }
-.warning-entry-header strong { flex: 1; font-size: 13px; }
-.warning-message { color: #374151; padding-left: 20px; line-height: 1.4; }
-.btn-dismiss {
-  background: none; border: none; cursor: pointer; font-size: 13px;
-  color: #6b7280; padding: 0 2px; line-height: 1; flex-shrink: 0;
-}
-.btn-dismiss:hover { color: #111827; }
+      .warning-entry {
+        display: flex;
+        flex-direction: column;
+        background: #fffbeb;
+        border: 1px solid #fcd34d;
+        border-radius: 6px;
+        padding: 8px 10px;
+        font-size: 13px;
+        gap: 2px;
+      }
+      .warning-entry.error {
+        background: #fef2f2;
+        border-color: #fca5a5;
+      }
+      .warning-entry-header {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+      }
+      .warning-sev-icon {
+        font-size: 14px;
+        flex-shrink: 0;
+      }
+      .warning-entry-header strong {
+        flex: 1;
+        font-size: 13px;
+      }
+      .warning-message {
+        color: #374151;
+        padding-left: 20px;
+        line-height: 1.4;
+      }
+      .btn-dismiss {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 13px;
+        color: #6b7280;
+        padding: 0 2px;
+        line-height: 1;
+        flex-shrink: 0;
+      }
+      .btn-dismiss:hover {
+        color: #111827;
+      }
 
-#btn-dismiss-all {
-  width: 100%; text-align: left; background: none; border: none; border-top: 1px solid #e5e7eb;
-  padding: 6px 12px; font-size: 12px; color: #6b7280; cursor: pointer; margin-top: 4px;
-}
-#btn-dismiss-all:hover { color: #111827; background: #f9fafb; }
+      #btn-dismiss-all {
+        width: 100%;
+        text-align: left;
+        background: none;
+        border: none;
+        border-top: 1px solid #e5e7eb;
+        padding: 6px 12px;
+        font-size: 12px;
+        color: #6b7280;
+        cursor: pointer;
+        margin-top: 4px;
+      }
+      #btn-dismiss-all:hover {
+        color: #111827;
+        background: #f9fafb;
+      }
 
-/* ── Toolbar ────────────────────────────────────────────────────────────── */
-#toolbar {
-  background: #fff; border-bottom: 1px solid #e5e7eb;
-  padding: 10px 24px;
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  position: sticky; top: 56px; z-index: 90;
-}
-#search-box {
-  flex: 1; min-width: 180px; max-width: 320px;
-  padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px;
-  font-size: 14px; outline: none;
-}
-#search-box:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,.2); }
-#btn-select-all { padding: 6px 12px; font-size: 13px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; cursor: pointer; white-space: nowrap; }
-#btn-select-all:hover { background: #f9fafb; }
-#selection-counter { font-size: 13px; color: #6b7280; white-space: nowrap; }
-.spacer { flex: 1; }
-#btn-download-zip {
-  padding: 7px 16px; font-size: 14px; font-weight: 600;
-  background: #2563eb; color: #fff; border: none; border-radius: 6px; cursor: pointer;
-  white-space: nowrap; transition: background .15s;
-}
-#btn-download-zip:hover:not(:disabled) { background: #1d4ed8; }
-#btn-download-zip:disabled { background: #9ca3af; cursor: not-allowed; }
+      /* ── Toolbar ────────────────────────────────────────────────────────────── */
+      #toolbar {
+        background: #fff;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 10px 24px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        position: sticky;
+        top: 56px;
+        z-index: 90;
+      }
+      #search-box {
+        flex: 1;
+        min-width: 180px;
+        max-width: 320px;
+        padding: 6px 10px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+        outline: none;
+      }
+      #search-box:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+      }
+      #btn-select-all {
+        padding: 6px 12px;
+        font-size: 13px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        background: #fff;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      #btn-select-all:hover {
+        background: #f9fafb;
+      }
+      #selection-counter {
+        font-size: 13px;
+        color: #6b7280;
+        white-space: nowrap;
+      }
+      .spacer {
+        flex: 1;
+      }
+      #btn-download-zip {
+        padding: 7px 16px;
+        font-size: 14px;
+        font-weight: 600;
+        background: #2563eb;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.15s;
+      }
+      #btn-download-zip:hover:not(:disabled) {
+        background: #1d4ed8;
+      }
+      #btn-download-zip:disabled {
+        background: #9ca3af;
+        cursor: not-allowed;
+      }
 
-/* ── Problem list ───────────────────────────────────────────────────────── */
-#problem-list { padding: 16px 24px; display: flex; flex-direction: column; gap: 8px; max-width: 900px; }
+      /* ── Problem list ───────────────────────────────────────────────────────── */
+      #problem-list {
+        padding: 16px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-width: 900px;
+      }
 
-/* ── Loading / empty / error states ──────────────────────────────────────── */
-.state-box {
-  padding: 32px 24px; text-align: center; color: #6b7280; background: #fff;
-  border: 1px solid #e5e7eb; border-radius: 8px;
-}
-.state-box p { margin-bottom: 12px; }
-.skeleton-card {
-  background: #fff; border: 1px solid #e5e7eb; border-radius: 8px;
-  height: 68px; padding: 16px;
-  background-image: linear-gradient(90deg,#f3f4f6 25%,#e5e7eb 50%,#f3f4f6 75%);
-  background-size: 400% 100%;
-  animation: shimmer 1.4s ease-in-out infinite;
-}
-@keyframes shimmer { 0%{background-position:100% 50%}100%{background-position:0% 50%} }
+      /* ── Loading / empty / error states ──────────────────────────────────────── */
+      .state-box {
+        padding: 32px 24px;
+        text-align: center;
+        color: #6b7280;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+      }
+      .state-box p {
+        margin-bottom: 12px;
+      }
+      .skeleton-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        height: 68px;
+        padding: 16px;
+        background-image: linear-gradient(
+          90deg,
+          #f3f4f6 25%,
+          #e5e7eb 50%,
+          #f3f4f6 75%
+        );
+        background-size: 400% 100%;
+        animation: shimmer 1.4s ease-in-out infinite;
+      }
+      @keyframes shimmer {
+        0% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
 
-/* ── Problem card ───────────────────────────────────────────────────────── */
-.problem-card {
-  background: #fff; border: 1px solid #e5e7eb; border-radius: 8px;
-  padding: 12px 14px;
-  display: flex; align-items: center; gap: 10px;
-  transition: border-color .15s, box-shadow .15s;
-}
-.problem-card:hover { border-color: #93c5fd; box-shadow: 0 1px 4px rgba(59,130,246,.12); }
-.problem-card.has-warnings { border-left: 3px solid #f59e0b; }
+      /* ── Problem card ───────────────────────────────────────────────────────── */
+      .problem-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 12px 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      .problem-card:hover {
+        border-color: #93c5fd;
+        box-shadow: 0 1px 4px rgba(59, 130, 246, 0.12);
+      }
+      .problem-card.has-warnings {
+        border-left: 3px solid #f59e0b;
+      }
 
-.card-checkbox { width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; accent-color: #2563eb; }
+      .card-checkbox {
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+        flex-shrink: 0;
+        accent-color: #2563eb;
+      }
 
-.letter-badge {
-  width: 28px; height: 28px; border-radius: 50%;
-  background: #1e3a5f; color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 700; flex-shrink: 0;
-}
+      .letter-badge {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #1e3a5f;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
 
-.card-main { flex: 1; min-width: 0; }
-.card-title { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
-.title-primary { font-size: 15px; font-weight: 600; }
-.title-secondary { font-size: 13px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
-.card-meta { font-size: 12px; color: #6b7280; margin-top: 2px; }
+      .card-main {
+        flex: 1;
+        min-width: 0;
+      }
+      .card-title {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .title-primary {
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .title-secondary {
+        font-size: 13px;
+        color: #6b7280;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 200px;
+      }
+      .card-meta {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 2px;
+      }
 
-.card-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+      .card-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
 
-/* badges */
-.badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; white-space: nowrap; }
-.badge-easy    { background: #d1fae5; color: #065f46; }
-.badge-medium  { background: #fef3c7; color: #92400e; }
-.badge-hard    { background: #fee2e2; color: #991b1b; }
-.badge-status  { background: #ede9fe; color: #5b21b6; }
-.badge-default { background: #f3f4f6; color: #374151; }
+      /* badges */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .badge-easy {
+        background: #d1fae5;
+        color: #065f46;
+      }
+      .badge-medium {
+        background: #fef3c7;
+        color: #92400e;
+      }
+      .badge-hard {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .badge-status {
+        background: #ede9fe;
+        color: #5b21b6;
+      }
+      .badge-default {
+        background: #f3f4f6;
+        color: #374151;
+      }
 
-/* cache indicator */
-.cache-dot {
-  width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0;
-  title: '';
-}
-.cache-dot.cached     { background: #10b981; }
-.cache-dot.not-cached { background: #d1d5db; }
+      /* cache indicator */
+      .cache-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        flex-shrink: 0;
+        title: "";
+      }
+      .cache-dot.cached {
+        background: #10b981;
+      }
+      .cache-dot.not-cached {
+        background: #d1d5db;
+      }
 
-/* card warning icon */
-.card-warn-icon { font-size: 14px; color: #f59e0b; cursor: default; }
-.card-warn-icon.hidden { display: none; }
+      /* card warning icon */
+      .card-warn-icon {
+        font-size: 14px;
+        color: #f59e0b;
+        cursor: default;
+      }
+      .card-warn-icon.hidden {
+        display: none;
+      }
 
-/* buttons in card */
-.btn-icon, .btn-pdf {
-  padding: 5px 10px; font-size: 12px; border-radius: 5px; cursor: pointer;
-  border: 1px solid #d1d5db; background: #fff; white-space: nowrap; transition: background .12s;
-}
-.btn-icon:hover:not(:disabled), .btn-pdf:hover:not(:disabled) { background: #f9fafb; }
-.btn-icon:disabled, .btn-pdf:disabled { opacity: .5; cursor: not-allowed; }
-.btn-pdf { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; font-weight: 600; }
-.btn-pdf:hover:not(:disabled) { background: #dbeafe; }
+      /* buttons in card */
+      .btn-icon,
+      .btn-pdf {
+        padding: 5px 10px;
+        font-size: 12px;
+        border-radius: 5px;
+        cursor: pointer;
+        border: 1px solid #d1d5db;
+        background: #fff;
+        white-space: nowrap;
+        transition: background 0.12s;
+      }
+      .btn-icon:hover:not(:disabled),
+      .btn-pdf:hover:not(:disabled) {
+        background: #f9fafb;
+      }
+      .btn-icon:disabled,
+      .btn-pdf:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .btn-pdf {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+        color: #1d4ed8;
+        font-weight: 600;
+      }
+      .btn-pdf:hover:not(:disabled) {
+        background: #dbeafe;
+      }
 
-/* ── Header buttons ─────────────────────────────────────────────────────── */
-.btn-header {
-  padding: 5px 12px; font-size: 13px; border-radius: 5px; cursor: pointer;
-  background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3); color: #fff;
-  white-space: nowrap; transition: background .12s;
-}
-.btn-header:hover { background: rgba(255,255,255,.25); }
-.btn-header.hidden { display: none; }
-.btn-header.severity-warning { background: #d97706; border-color: #b45309; }
-.btn-header.severity-error   { background: #dc2626; border-color: #b91c1c; }
+      /* ── Header buttons ─────────────────────────────────────────────────────── */
+      .btn-header {
+        padding: 5px 12px;
+        font-size: 13px;
+        border-radius: 5px;
+        cursor: pointer;
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: #fff;
+        white-space: nowrap;
+        transition: background 0.12s;
+      }
+      .btn-header:hover {
+        background: rgba(255, 255, 255, 0.25);
+      }
+      .btn-header.hidden {
+        display: none;
+      }
+      .btn-header.severity-warning {
+        background: #d97706;
+        border-color: #b45309;
+      }
+      .btn-header.severity-error {
+        background: #dc2626;
+        border-color: #b91c1c;
+      }
 
-/* ── Bundle overlay ─────────────────────────────────────────────────────── */
-#bundle-overlay {
-  position: fixed; inset: 0; z-index: 200;
-  background: rgba(0,0,0,.55);
-  display: flex; align-items: center; justify-content: center;
-}
-#bundle-overlay.hidden { display: none; }
-#bundle-modal {
-  background: #fff; border-radius: 10px; padding: 24px 28px;
-  width: 520px; max-width: 95vw; max-height: 80vh;
-  display: flex; flex-direction: column; gap: 12px;
-  box-shadow: 0 20px 60px rgba(0,0,0,.3);
-}
-#bundle-modal h2 { font-size: 17px; font-weight: 700; }
-#bundle-current { font-size: 14px; color: #374151; min-height: 20px; }
+      /* ── Bundle overlay ─────────────────────────────────────────────────────── */
+      #bundle-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 200;
+        background: rgba(0, 0, 0, 0.55);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #bundle-overlay.hidden {
+        display: none;
+      }
+      #bundle-modal {
+        background: #fff;
+        border-radius: 10px;
+        padding: 24px 28px;
+        width: 520px;
+        max-width: 95vw;
+        max-height: 80vh;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+      #bundle-modal h2 {
+        font-size: 17px;
+        font-weight: 700;
+      }
+      #bundle-current {
+        font-size: 14px;
+        color: #374151;
+        min-height: 20px;
+      }
 
-.progress-wrap { background: #e5e7eb; border-radius: 8px; height: 10px; overflow: hidden; }
-#bundle-progress-bar { height: 100%; background: #2563eb; border-radius: 8px; transition: width .3s ease; }
-#bundle-progress-bar.done  { background: #10b981; }
-#bundle-progress-bar.error { background: #dc2626; }
+      .progress-wrap {
+        background: #e5e7eb;
+        border-radius: 8px;
+        height: 10px;
+        overflow: hidden;
+      }
+      #bundle-progress-bar {
+        height: 100%;
+        background: #2563eb;
+        border-radius: 8px;
+        transition: width 0.3s ease;
+      }
+      #bundle-progress-bar.done {
+        background: #10b981;
+      }
+      #bundle-progress-bar.error {
+        background: #dc2626;
+      }
 
-.bundle-meta { display: flex; justify-content: flex-end; font-size: 12px; color: #6b7280; }
-#bundle-log { list-style: none; overflow-y: auto; max-height: 200px; display: flex; flex-direction: column; gap: 3px; }
-.bundle-log-item { font-size: 13px; padding: 3px 6px; border-radius: 4px; }
-.bundle-log-item.status-ok      { color: #065f46; background: #d1fae5; }
-.bundle-log-item.status-warning { color: #92400e; background: #fef3c7; }
-.bundle-log-item.status-error   { color: #991b1b; background: #fee2e2; }
-.bundle-log-item.status-generating { color: #1e40af; background: #dbeafe; }
+      .bundle-meta {
+        display: flex;
+        justify-content: flex-end;
+        font-size: 12px;
+        color: #6b7280;
+      }
+      #bundle-log {
+        list-style: none;
+        overflow-y: auto;
+        max-height: 200px;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .bundle-log-item {
+        font-size: 13px;
+        padding: 3px 6px;
+        border-radius: 4px;
+      }
+      .bundle-log-item.status-ok {
+        color: #065f46;
+        background: #d1fae5;
+      }
+      .bundle-log-item.status-warning {
+        color: #92400e;
+        background: #fef3c7;
+      }
+      .bundle-log-item.status-error {
+        color: #991b1b;
+        background: #fee2e2;
+      }
+      .bundle-log-item.status-generating {
+        color: #1e40af;
+        background: #dbeafe;
+      }
 
-.bundle-footer { display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px; }
-.btn-bundle-action {
-  padding: 7px 18px; font-size: 14px; font-weight: 600;
-  border-radius: 6px; cursor: pointer; border: 1px solid;
-}
-#btn-bundle-cancel {
-  background: #fff; border-color: #d1d5db; color: #374151;
-}
-#btn-bundle-cancel:hover { background: #f9fafb; }
+      .bundle-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        padding-top: 4px;
+      }
+      .btn-bundle-action {
+        padding: 7px 18px;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 6px;
+        cursor: pointer;
+        border: 1px solid;
+      }
+      #btn-bundle-cancel {
+        background: #fff;
+        border-color: #d1d5db;
+        color: #374151;
+      }
+      #btn-bundle-cancel:hover {
+        background: #f9fafb;
+      }
 
-/* ── Toast ──────────────────────────────────────────────────────────────── */
-#toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 300; display: flex; flex-direction: column; gap: 8px; }
-.toast {
-  padding: 10px 16px; border-radius: 6px; font-size: 13px;
-  background: #1f2937; color: #fff;
-  box-shadow: 0 4px 12px rgba(0,0,0,.25);
-  opacity: 1; transition: opacity .4s;
-}
-.toast.error { background: #dc2626; }
-.toast.fade-out { opacity: 0; }
-</style>
-</head>
-<body>
+      /* ── Toast ──────────────────────────────────────────────────────────────── */
+      #toast-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 300;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .toast {
+        padding: 10px 16px;
+        border-radius: 6px;
+        font-size: 13px;
+        background: #1f2937;
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        opacity: 1;
+        transition: opacity 0.4s;
+      }
+      .toast.error {
+        background: #dc2626;
+      }
+      .toast.fade-out {
+        opacity: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ── App header ──────────────────────────────────────────────────────── -->
+    <header id="app-header">
+      <div class="header-top">
+        <span id="app-title">Contest PDF Generator</span>
+        <div class="header-controls">
+          <button
+            id="btn-warnings"
+            class="btn-header hidden"
+            onclick="toggleWarningPanel()"
+          >
+            ⚠ 0
+          </button>
+          <button
+            id="btn-clear-cache"
+            class="btn-header"
+            onclick="handleClearAllCache()"
+          >
+            Clear All Cache
+          </button>
+        </div>
+      </div>
+      <div id="warning-panel" class="hidden">
+        <ul id="warning-panel-list"></ul>
+      </div>
+    </header>
 
-<!-- ── App header ──────────────────────────────────────────────────────── -->
-<header id="app-header">
-  <div class="header-top">
-    <span id="app-title">Contest PDF Generator</span>
-    <div class="header-controls">
-      <button id="btn-warnings" class="btn-header hidden" onclick="toggleWarningPanel()">⚠ 0</button>
-      <button id="btn-clear-cache" class="btn-header" onclick="handleClearAllCache()">Clear All Cache</button>
+    <!-- ── Toolbar ─────────────────────────────────────────────────────────── -->
+    <div id="toolbar">
+      <input
+        type="text"
+        id="search-box"
+        placeholder="Search problems…"
+        oninput="handleSearch()"
+      />
+      <button id="btn-select-all" onclick="handleSelectAll()">
+        Select All
+      </button>
+      <span id="selection-counter">Bundle: 0 / 0 selected</span>
+      <span class="spacer"></span>
+      <button
+        id="btn-download-zip"
+        disabled
+        title="Select at least one problem to download"
+        onclick="handleDownloadZip()"
+      >
+        ⬇ Download ZIP
+      </button>
     </div>
-  </div>
-  <div id="warning-panel" class="hidden">
-    <ul id="warning-panel-list"></ul>
-  </div>
-</header>
 
-<!-- ── Toolbar ─────────────────────────────────────────────────────────── -->
-<div id="toolbar">
-  <input type="text" id="search-box" placeholder="Search problems…" oninput="handleSearch()">
-  <button id="btn-select-all" onclick="handleSelectAll()">Select All</button>
-  <span id="selection-counter">Bundle: 0 / 0 selected</span>
-  <span class="spacer"></span>
-  <button id="btn-download-zip" disabled title="Select at least one problem to download" onclick="handleDownloadZip()">⬇ Download ZIP</button>
-</div>
+    <!-- ── Problem list ─────────────────────────────────────────────────────── -->
+    <main id="problem-list"></main>
 
-<!-- ── Problem list ─────────────────────────────────────────────────────── -->
-<main id="problem-list"></main>
-
-<!-- ── Bundle overlay ──────────────────────────────────────────────────── -->
-<div id="bundle-overlay" class="hidden">
-  <div id="bundle-modal">
-    <h2>Generating ZIP Bundle</h2>
-    <p id="bundle-current">Preparing…</p>
-    <div class="progress-wrap"><div id="bundle-progress-bar" style="width:0%"></div></div>
-    <div class="bundle-meta"><span id="bundle-counter">0 / 0</span></div>
-    <ul id="bundle-log"></ul>
-    <div class="bundle-footer">
-      <button id="btn-bundle-cancel" class="btn-bundle-action" onclick="cancelBundle()">Cancel</button>
+    <!-- ── Bundle overlay ──────────────────────────────────────────────────── -->
+    <div id="bundle-overlay" class="hidden">
+      <div id="bundle-modal">
+        <h2>Generating ZIP Bundle</h2>
+        <p id="bundle-current">Preparing…</p>
+        <div class="progress-wrap">
+          <div id="bundle-progress-bar" style="width: 0%"></div>
+        </div>
+        <div class="bundle-meta"><span id="bundle-counter">0 / 0</span></div>
+        <ul id="bundle-log"></ul>
+        <div class="bundle-footer">
+          <button
+            id="btn-bundle-cancel"
+            class="btn-bundle-action"
+            onclick="cancelBundle()"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
 
-<!-- ── Toast container ─────────────────────────────────────────────────── -->
-<div id="toast-container"></div>
+    <!-- ── Toast container ─────────────────────────────────────────────────── -->
+    <div id="toast-container"></div>
 
-<script>
-// ── State ────────────────────────────────────────────────────────────────
-let allProblems     = [];      // full list from /api/problems
-let cachedSet       = new Set(); // page_ids with known cached PDFs
-let problemWarnings = {};      // page_id -> [warning codes]
-let warnEntries     = [];      // {id, severity, problemTitle, message}
-let warnCount = 0, errCount = 0;
-let bundleAbort     = null;    // AbortController for SSE fetch
-let bundleActive    = false;
+    <script>
+      // ── State ────────────────────────────────────────────────────────────────
+      let allProblems = []; // full list from /api/problems
+      let cachedSet = new Set(); // page_ids with known cached PDFs
+      let problemWarnings = {}; // page_id -> [warning codes]
+      let warnEntries = []; // {id, severity, problemTitle, message}
+      let warnCount = 0,
+        errCount = 0;
+      let bundleAbort = null; // AbortController for SSE fetch
+      let bundleActive = false;
 
-// ── Utility ──────────────────────────────────────────────────────────────
-function esc(s) {
-  return String(s)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+      // ── Utility ──────────────────────────────────────────────────────────────
+      function esc(s) {
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
 
-function splitTitle(full) {
-  const m = full.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
-  return m ? { primary: m[1].trim(), secondary: m[2].trim() } : { primary: full, secondary: null };
-}
+      function splitTitle(full) {
+        const m = full.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
+        return m
+          ? { primary: m[1].trim(), secondary: m[2].trim() }
+          : { primary: full, secondary: null };
+      }
 
-function sanitizeFilename(name) {
-  return (name || 'problem').replace(/[^a-zA-Z0-9_-]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');
-}
+      function sanitizeFilename(name) {
+        return (name || "problem")
+          .replace(/[^a-zA-Z0-9_-]/g, "_")
+          .replace(/_+/g, "_")
+          .replace(/^_|_$/g, "");
+      }
 
-function showToast(msg, type='info') {
-  const t = document.createElement('div');
-  t.className = 'toast' + (type==='error' ? ' error' : '');
-  t.textContent = msg;
-  document.getElementById('toast-container').appendChild(t);
-  setTimeout(()=>{ t.classList.add('fade-out'); setTimeout(()=>t.remove(), 400); }, 3000);
-}
+      function showToast(msg, type = "info") {
+        const t = document.createElement("div");
+        t.className = "toast" + (type === "error" ? " error" : "");
+        t.textContent = msg;
+        document.getElementById("toast-container").appendChild(t);
+        setTimeout(() => {
+          t.classList.add("fade-out");
+          setTimeout(() => t.remove(), 400);
+        }, 3000);
+      }
 
-// ── Load problems ─────────────────────────────────────────────────────────
-async function loadProblems() {
-  const list = document.getElementById('problem-list');
-  list.innerHTML = [1,2,3,4].map(()=>'<div class="skeleton-card"></div>').join('');
-  try {
-    const r = await fetch('/api/problems');
-    if (!r.ok) throw new Error(await r.text());
-    allProblems = await r.json();
-    if (allProblems.error) throw new Error(allProblems.error);
-    renderProblems();
-  } catch (e) {
-    list.innerHTML = `<div class="state-box"><p>Could not load problems. Check your connection and try again.</p><button onclick="loadProblems()" class="btn-icon">Retry</button></div>`;
-    addEntry('error', 'System', `Failed to load problem list: ${e.message}`);
-  }
-}
+      // ── Load problems ─────────────────────────────────────────────────────────
+      async function loadProblems() {
+        const list = document.getElementById("problem-list");
+        list.innerHTML = [1, 2, 3, 4]
+          .map(() => '<div class="skeleton-card"></div>')
+          .join("");
+        try {
+          const r = await fetch("/api/problems");
+          if (!r.ok) throw new Error(await r.text());
+          allProblems = await r.json();
+          if (allProblems.error) throw new Error(allProblems.error);
+          renderProblems();
+        } catch (e) {
+          list.innerHTML = `<div class="state-box"><p>Could not load problems. Check your connection and try again.</p><button onclick="loadProblems()" class="btn-icon">Retry</button></div>`;
+          addEntry(
+            "error",
+            "System",
+            `Failed to load problem list: ${e.message}`,
+          );
+        }
+      }
 
-function getVisible() {
-  const q = document.getElementById('search-box').value.toLowerCase().trim();
-  if (!q) return allProblems;
-  return allProblems.filter(p => p.title.toLowerCase().includes(q));
-}
+      function getVisible() {
+        const q = document
+          .getElementById("search-box")
+          .value.toLowerCase()
+          .trim();
+        if (!q) return allProblems;
+        return allProblems.filter((p) => p.title.toLowerCase().includes(q));
+      }
 
-function renderProblems() {
-  const list = document.getElementById('problem-list');
-  const visible = getVisible();
-  const q = document.getElementById('search-box').value.trim();
-  if (!visible.length) {
-    list.innerHTML = `<div class="state-box"><p>${q ? `No problems match &ldquo;${esc(q)}&rdquo;.` : 'No problems found in the Notion database.'}</p></div>`;
-    updateToolbar();
-    return;
-  }
-  // Remember which checkboxes were checked before re-render
-  const checked = new Set([...document.querySelectorAll('.card-checkbox:checked')].map(c=>c.dataset.id));
-  list.innerHTML = '';
-  visible.forEach(p => list.appendChild(makeCard(p, checked.has(p.id))));
-  updateToolbar();
-}
+      function renderProblems() {
+        const list = document.getElementById("problem-list");
+        const visible = getVisible();
+        const q = document.getElementById("search-box").value.trim();
+        if (!visible.length) {
+          list.innerHTML = `<div class="state-box"><p>${q ? `No problems match &ldquo;${esc(q)}&rdquo;.` : "No problems found in the Notion database."}</p></div>`;
+          updateToolbar();
+          return;
+        }
+        // Remember which checkboxes were checked before re-render
+        const checked = new Set(
+          [...document.querySelectorAll(".card-checkbox:checked")].map(
+            (c) => c.dataset.id,
+          ),
+        );
+        list.innerHTML = "";
+        visible.forEach((p) =>
+          list.appendChild(makeCard(p, checked.has(p.id))),
+        );
+        updateToolbar();
+      }
 
-function makeCard(p, isChecked=false) {
-  const div = document.createElement('div');
-  const t = splitTitle(p.title);
-  const isCached = cachedSet.has(p.id);
-  const hasWarn  = !!(problemWarnings[p.id] && problemWarnings[p.id].length);
-  const diffClass = { easy:'badge-easy', medium:'badge-medium', hard:'badge-hard' }[p.difficulty && p.difficulty.toLowerCase()] || 'badge-default';
+      function makeCard(p, isChecked = false) {
+        const div = document.createElement("div");
+        const t = splitTitle(p.title);
+        const isCached = cachedSet.has(p.id);
+        const hasWarn = !!(
+          problemWarnings[p.id] && problemWarnings[p.id].length
+        );
+        const diffClass =
+          { easy: "badge-easy", medium: "badge-medium", hard: "badge-hard" }[
+            p.difficulty && p.difficulty.toLowerCase()
+          ] || "badge-default";
 
-  div.className = 'problem-card' + (hasWarn ? ' has-warnings' : '');
-  div.dataset.id = p.id;
-  div.innerHTML = `
-    <input type="checkbox" class="card-checkbox" data-id="${esc(p.id)}" ${isChecked?'checked':''} onchange="updateToolbar()">
-    ${p.letter ? `<span class="letter-badge">${esc(p.letter)}</span>` : ''}
+        div.className = "problem-card" + (hasWarn ? " has-warnings" : "");
+        div.dataset.id = p.id;
+        div.innerHTML = `
+    <input type="checkbox" class="card-checkbox" data-id="${esc(p.id)}" ${isChecked ? "checked" : ""} onchange="updateToolbar()">
+    ${p.letter ? `<span class="letter-badge">${esc(p.letter)}</span>` : ""}
     <div class="card-main">
       <div class="card-title">
         <span class="title-primary">${esc(t.primary)}</span>
-        ${t.secondary ? `<span class="title-secondary" title="${esc(t.secondary)}">${esc(t.secondary)}</span>` : ''}
+        ${t.secondary ? `<span class="title-secondary" title="${esc(t.secondary)}">${esc(t.secondary)}</span>` : ""}
       </div>
       <div class="card-meta">${esc(p.time_limit)} · ${esc(p.memory_limit)}</div>
     </div>
     <div class="card-actions">
-      ${p.difficulty ? `<span class="badge ${esc(diffClass)}">${esc(p.difficulty)}</span>` : ''}
-      ${p.status     ? `<span class="badge badge-status">${esc(p.status)}</span>` : ''}
-      <span class="cache-dot ${isCached?'cached':'not-cached'}" title="${isCached?'Cached':'Not cached'}"></span>
-      <span class="card-warn-icon${hasWarn?'':' hidden'}" title="This problem had warnings during PDF generation">⚠</span>
+      ${p.difficulty ? `<span class="badge ${esc(diffClass)}">${esc(p.difficulty)}</span>` : ""}
+      ${p.status ? `<span class="badge badge-status">${esc(p.status)}</span>` : ""}
+      <span class="cache-dot ${isCached ? "cached" : "not-cached"}" title="${isCached ? "Cached" : "Not cached"}"></span>
+      <span class="card-warn-icon${hasWarn ? "" : " hidden"}" title="This problem had warnings during PDF generation">⚠</span>
       <button class="btn-icon btn-refresh" data-id="${esc(p.id)}" title="Re-fetch from Notion" onclick="handleRefresh('${esc(p.id)}','${esc(p.title)}')">↺</button>
-      <button class="btn-pdf" data-id="${esc(p.id)}" onclick="handlePdf('${esc(p.id)}','${esc(p.title)}','${esc(p.title_en||p.title)}')">⬇ PDF</button>
+      <button class="btn-pdf" data-id="${esc(p.id)}" onclick="handlePdf('${esc(p.id)}','${esc(p.title)}','${esc(p.title_en || p.title)}')">⬇ PDF</button>
     </div>`;
-  return div;
-}
-
-// ── Toolbar ───────────────────────────────────────────────────────────────
-function updateToolbar() {
-  const visible = getVisible();
-  const visIds  = new Set(visible.map(p=>p.id));
-  const boxes   = [...document.querySelectorAll('.card-checkbox')].filter(c=>visIds.has(c.dataset.id));
-  const selCount = boxes.filter(c=>c.checked).length;
-  const total    = visible.length;
-
-  document.getElementById('selection-counter').textContent = `Bundle: ${selCount} / ${total} selected`;
-  const zipBtn = document.getElementById('btn-download-zip');
-  zipBtn.disabled = selCount === 0;
-  zipBtn.title = selCount === 0 ? 'Select at least one problem to download' : '';
-
-  const allChk = selCount === total && total > 0;
-  document.getElementById('btn-select-all').textContent = allChk ? 'Deselect All' : 'Select All';
-}
-
-function handleSearch() { renderProblems(); }
-
-function handleSelectAll() {
-  const visible  = getVisible();
-  const visIds   = new Set(visible.map(p=>p.id));
-  const boxes    = [...document.querySelectorAll('.card-checkbox')].filter(c=>visIds.has(c.dataset.id));
-  const allChk   = boxes.every(c=>c.checked) && boxes.length > 0;
-  boxes.forEach(c=>{ c.checked = !allChk; });
-  updateToolbar();
-}
-
-// ── PDF download ──────────────────────────────────────────────────────────
-async function handlePdf(pageId, title, titleEn) {
-  const card = document.querySelector(`.problem-card[data-id="${pageId}"]`);
-  const btn  = card && card.querySelector('.btn-pdf');
-  if (btn) { btn.textContent='Generating…'; btn.disabled=true; }
-  try {
-    const r = await fetch(`/api/problems/${pageId}/pdf`);
-    if (!r.ok) { const d=await r.json().catch(()=>({error:'Server error'})); throw new Error(d.error); }
-
-    const warnHdr = r.headers.get('X-PDF-Warnings');
-    if (warnHdr) {
-      const codes = warnHdr.split('|').filter(Boolean);
-      problemWarnings[pageId] = codes;
-      codes.forEach(c => addEntryFromCode(title, c));
-      if (card) {
-        card.classList.add('has-warnings');
-        const wi = card.querySelector('.card-warn-icon');
-        if (wi) wi.classList.remove('hidden');
+        return div;
       }
-    }
 
-    const blob = await r.blob();
-    triggerDownload(blob, sanitizeFilename(titleEn||title)+'.pdf');
+      // ── Toolbar ───────────────────────────────────────────────────────────────
+      function updateToolbar() {
+        const visible = getVisible();
+        const visIds = new Set(visible.map((p) => p.id));
+        const boxes = [...document.querySelectorAll(".card-checkbox")].filter(
+          (c) => visIds.has(c.dataset.id),
+        );
+        const selCount = boxes.filter((c) => c.checked).length;
+        const total = visible.length;
 
-    cachedSet.add(pageId);
-    if (card) {
-      const dot = card.querySelector('.cache-dot');
-      if (dot) { dot.className='cache-dot cached'; dot.title='Cached'; }
-    }
-  } catch(e) {
-    addEntry('error', title, `Could not generate PDF: ${e.message}`);
-    if (card) {
-      const wi = card.querySelector('.card-warn-icon');
-      if (wi) wi.classList.remove('hidden');
-    }
-  } finally {
-    if (btn) { btn.textContent='⬇ PDF'; btn.disabled=false; }
-  }
-}
+        document.getElementById("selection-counter").textContent =
+          `Bundle: ${selCount} / ${total} selected`;
+        const zipBtn = document.getElementById("btn-download-zip");
+        zipBtn.disabled = selCount === 0;
+        zipBtn.title =
+          selCount === 0 ? "Select at least one problem to download" : "";
 
-// ── Refresh ───────────────────────────────────────────────────────────────
-async function handleRefresh(pageId, title) {
-  const card = document.querySelector(`.problem-card[data-id="${pageId}"]`);
-  const btn  = card && card.querySelector('.btn-refresh');
-  if (btn) { btn.textContent='↻'; btn.disabled=true; }
-  try {
-    const r = await fetch(`/api/problems/${pageId}/cache`, {method:'DELETE'});
-    if (!r.ok) throw new Error(await r.text());
-    cachedSet.delete(pageId);
-    if (card) {
-      const dot = card.querySelector('.cache-dot');
-      if (dot) { dot.className='cache-dot not-cached'; dot.title='Not cached'; }
-    }
-    showToast('Cache cleared for this problem.');
-  } catch(e) {
-    addEntry('error', title, `Could not clear cache: ${e.message}`);
-  } finally {
-    if (btn) { btn.textContent='↺'; btn.disabled=false; }
-  }
-}
-
-// ── Clear all cache ───────────────────────────────────────────────────────
-async function handleClearAllCache() {
-  try {
-    const r = await fetch('/api/problems/cache', {method:'DELETE'});
-    if (!r.ok) throw new Error(await r.text());
-    const d = await r.json();
-    cachedSet.clear();
-    document.querySelectorAll('.cache-dot').forEach(el=>{
-      el.className='cache-dot not-cached'; el.title='Not cached';
-    });
-    showToast(`Cache cleared — ${d.cleared} entr${d.cleared===1?'y':'ies'} removed.`);
-  } catch(e) {
-    showToast('Could not clear cache. Try again.', 'error');
-  }
-}
-
-// ── Bundle (ZIP) ──────────────────────────────────────────────────────────
-function handleDownloadZip() {
-  if (bundleActive) return;
-  const visible = getVisible();
-  const visIds  = new Set(visible.map(p=>p.id));
-  const ids     = [...document.querySelectorAll('.card-checkbox')]
-                    .filter(c=>c.checked && visIds.has(c.dataset.id))
-                    .map(c=>c.dataset.id);
-  if (!ids.length) return;
-  startBundle(ids);
-}
-
-function startBundle(pageIds) {
-  bundleActive = true;
-  const overlay  = document.getElementById('bundle-overlay');
-  const current  = document.getElementById('bundle-current');
-  const bar      = document.getElementById('bundle-progress-bar');
-  const counter  = document.getElementById('bundle-counter');
-  const log      = document.getElementById('bundle-log');
-  const cancelBtn= document.getElementById('btn-bundle-cancel');
-
-  overlay.classList.remove('hidden');
-  current.textContent   = 'Preparing…';
-  current.style.color   = '';
-  bar.style.width       = '0%';
-  bar.className         = '';
-  counter.textContent   = `0 / ${pageIds.length}`;
-  log.innerHTML         = '';
-  cancelBtn.textContent = 'Cancel';
-  cancelBtn.onclick     = cancelBundle;
-
-  bundleAbort = new AbortController();
-
-  fetch('/api/problems/bundle/stream', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({page_ids: pageIds}),
-    signal: bundleAbort.signal,
-  }).then(async resp => {
-    if (!resp.ok) throw new Error(`Server error: ${resp.status}`);
-    const reader  = resp.body.getReader();
-    const decoder = new TextDecoder();
-    let buf = '';
-    while (true) {
-      const {done, value} = await reader.read();
-      if (done) break;
-      buf += decoder.decode(value, {stream:true});
-      const chunks = buf.split('\n\n');
-      buf = chunks.pop();
-      for (const chunk of chunks) {
-        const line = chunk.trim();
-        if (!line.startsWith('data: ')) continue;
-        try { handleBundleEvent(JSON.parse(line.slice(6)), pageIds, bar, counter, current, log, overlay, cancelBtn); }
-        catch(e) { console.error('SSE parse error', line, e); }
+        const allChk = selCount === total && total > 0;
+        document.getElementById("btn-select-all").textContent = allChk
+          ? "Deselect All"
+          : "Select All";
       }
-    }
-  }).catch(e => {
-    if (e.name === 'AbortError') return;
-    console.error('Bundle error:', e);
-    current.textContent = 'Connection error. Please try again.';
-    current.style.color = '#dc2626';
-    bar.className = 'error';
-    cancelBtn.textContent = 'Close';
-    cancelBtn.onclick = closeBundleOverlay;
-    bundleActive = false;
-  });
-}
 
-function handleBundleEvent(ev, pageIds, bar, counter, current, log, overlay, cancelBtn) {
-  const total = ev.total || pageIds.length;
-  const done  = ev.done  || 0;
+      function handleSearch() {
+        renderProblems();
+      }
 
-  if (ev.status === 'starting' || ev.status === 'generating') {
-    current.textContent = ev.status==='generating' ? `Generating ${ev.current}…` : 'Preparing…';
-    return;
-  }
+      function handleSelectAll() {
+        const visible = getVisible();
+        const visIds = new Set(visible.map((p) => p.id));
+        const boxes = [...document.querySelectorAll(".card-checkbox")].filter(
+          (c) => visIds.has(c.dataset.id),
+        );
+        const allChk = boxes.every((c) => c.checked) && boxes.length > 0;
+        boxes.forEach((c) => {
+          c.checked = !allChk;
+        });
+        updateToolbar();
+      }
 
-  if (['ok','warning','error'].includes(ev.status)) {
-    bar.style.width = `${(done/total)*100}%`;
-    counter.textContent = `${done} / ${total}`;
-    const icon = {ok:'✓',warning:'⚠',error:'✗'}[ev.status];
-    const li = document.createElement('li');
-    li.className = `bundle-log-item status-${ev.status}`;
-    li.textContent = `${icon} ${ev.current}${ev.warnings&&ev.warnings.length ? ` (${ev.warnings.length} warning${ev.warnings.length>1?'s':''})` : ''}`;
-    log.appendChild(li);
-    if (ev.warnings) ev.warnings.forEach(w=>addEntryFromCode(ev.current, w));
-    return;
-  }
+      // ── PDF download ──────────────────────────────────────────────────────────
+      async function handlePdf(pageId, title, titleEn) {
+        const card = document.querySelector(
+          `.problem-card[data-id="${pageId}"]`,
+        );
+        const btn = card && card.querySelector(".btn-pdf");
+        if (btn) {
+          btn.textContent = "Generating…";
+          btn.disabled = true;
+        }
+        try {
+          const r = await fetch(`/api/problems/${pageId}/pdf`);
+          if (!r.ok) {
+            const d = await r.json().catch(() => ({ error: "Server error" }));
+            throw new Error(d.error);
+          }
 
-  if (ev.status === 'done') {
-    bar.style.width = '100%';
-    bar.className   = 'done';
-    counter.textContent = `${total} / ${total}`;
-    const hasWarn = log.querySelector('.status-warning, .status-error');
-    if (hasWarn) {
-      current.textContent = 'Done — with warnings. Check the warning panel.';
-      current.style.color = '#d97706';
-    } else {
-      current.textContent = 'Done! Downloading your ZIP…';
-    }
-    triggerDownload(null, 'contest_problems.zip', `/api/problems/bundle/download?token=${ev.token}`);
-    cancelBtn.textContent = 'Close';
-    cancelBtn.onclick = closeBundleOverlay;
-    bundleActive = false;
-    if (!hasWarn) setTimeout(closeBundleOverlay, 3000);
-  }
-}
+          const warnHdr = r.headers.get("X-PDF-Warnings");
+          if (warnHdr) {
+            const codes = warnHdr.split("|").filter(Boolean);
+            problemWarnings[pageId] = codes;
+            codes.forEach((c) => addEntryFromCode(title, c));
+            if (card) {
+              card.classList.add("has-warnings");
+              const wi = card.querySelector(".card-warn-icon");
+              if (wi) wi.classList.remove("hidden");
+            }
+          }
 
-function cancelBundle() {
-  if (bundleAbort) { bundleAbort.abort(); bundleAbort=null; }
-  bundleActive = false;
-  closeBundleOverlay();
-}
+          const blob = await r.blob();
+          triggerDownload(blob, sanitizeFilename(titleEn || title) + ".pdf");
 
-function closeBundleOverlay() {
-  document.getElementById('bundle-overlay').classList.add('hidden');
-  bundleActive = false;
-}
+          cachedSet.add(pageId);
+          if (card) {
+            const dot = card.querySelector(".cache-dot");
+            if (dot) {
+              dot.className = "cache-dot cached";
+              dot.title = "Cached";
+            }
+          }
+        } catch (e) {
+          addEntry("error", title, `Could not generate PDF: ${e.message}`);
+          if (card) {
+            const wi = card.querySelector(".card-warn-icon");
+            if (wi) wi.classList.remove("hidden");
+          }
+        } finally {
+          if (btn) {
+            btn.textContent = "⬇ PDF";
+            btn.disabled = false;
+          }
+        }
+      }
 
-// ── File download helper ──────────────────────────────────────────────────
-function triggerDownload(blob, filename, url) {
-  const a = document.createElement('a');
-  if (url) {
-    a.href = url;
-  } else {
-    a.href = URL.createObjectURL(blob);
-    setTimeout(()=>URL.revokeObjectURL(a.href), 10000);
-  }
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-}
+      // ── Refresh ───────────────────────────────────────────────────────────────
+      async function handleRefresh(pageId, title) {
+        const card = document.querySelector(
+          `.problem-card[data-id="${pageId}"]`,
+        );
+        const btn = card && card.querySelector(".btn-refresh");
+        if (btn) {
+          btn.textContent = "↻";
+          btn.disabled = true;
+        }
+        try {
+          const r = await fetch(`/api/problems/${pageId}/cache`, {
+            method: "DELETE",
+          });
+          if (!r.ok) throw new Error(await r.text());
+          cachedSet.delete(pageId);
+          if (card) {
+            const dot = card.querySelector(".cache-dot");
+            if (dot) {
+              dot.className = "cache-dot not-cached";
+              dot.title = "Not cached";
+            }
+          }
+          showToast("Cache cleared for this problem.");
+        } catch (e) {
+          addEntry("error", title, `Could not clear cache: ${e.message}`);
+        } finally {
+          if (btn) {
+            btn.textContent = "↺";
+            btn.disabled = false;
+          }
+        }
+      }
 
-// ── Warning panel ─────────────────────────────────────────────────────────
-function toggleWarningPanel() {
-  document.getElementById('warning-panel').classList.toggle('hidden');
-}
+      // ── Clear all cache ───────────────────────────────────────────────────────
+      async function handleClearAllCache() {
+        try {
+          const r = await fetch("/api/problems/cache", { method: "DELETE" });
+          if (!r.ok) throw new Error(await r.text());
+          const d = await r.json();
+          cachedSet.clear();
+          document.querySelectorAll(".cache-dot").forEach((el) => {
+            el.className = "cache-dot not-cached";
+            el.title = "Not cached";
+          });
+          showToast(
+            `Cache cleared — ${d.cleared} entr${d.cleared === 1 ? "y" : "ies"} removed.`,
+          );
+        } catch (e) {
+          showToast("Could not clear cache. Try again.", "error");
+        }
+      }
 
-function addEntryFromCode(problemTitle, code) {
-  let msg;
-  if (code.startsWith('missing_image:')) {
-    msg = `An image could not be downloaded and was skipped. The PDF may have a gap where the image should appear.`;
-  } else if (code.startsWith('unknown_section:')) {
-    const h = code.slice('unknown_section:'.length);
-    msg = `The section heading "${h}" was not recognised and its content was excluded from the PDF. Verify the Notion page uses the correct heading text.`;
-  } else {
-    msg = code;
-  }
-  addEntry('warning', problemTitle, msg);
-}
+      // ── Bundle (ZIP) ──────────────────────────────────────────────────────────
+      function handleDownloadZip() {
+        if (bundleActive) return;
+        const visible = getVisible();
+        const visIds = new Set(visible.map((p) => p.id));
+        const ids = [...document.querySelectorAll(".card-checkbox")]
+          .filter((c) => c.checked && visIds.has(c.dataset.id))
+          .map((c) => c.dataset.id);
+        if (!ids.length) return;
+        startBundle(ids);
+      }
 
-function addEntry(severity, problemTitle, message) {
-  const id = Date.now() + Math.random();
-  warnEntries.push({id, severity, problemTitle, message});
-  if (severity==='error') errCount++; else warnCount++;
+      function startBundle(pageIds) {
+        bundleActive = true;
+        const overlay = document.getElementById("bundle-overlay");
+        const current = document.getElementById("bundle-current");
+        const bar = document.getElementById("bundle-progress-bar");
+        const counter = document.getElementById("bundle-counter");
+        const log = document.getElementById("bundle-log");
+        const cancelBtn = document.getElementById("btn-bundle-cancel");
 
-  const li  = document.createElement('li');
-  li.dataset.id = id;
+        overlay.classList.remove("hidden");
+        current.textContent = "Preparing…";
+        current.style.color = "";
+        bar.style.width = "0%";
+        bar.className = "";
+        counter.textContent = `0 / ${pageIds.length}`;
+        log.innerHTML = "";
+        cancelBtn.textContent = "Cancel";
+        cancelBtn.onclick = cancelBundle;
 
-  const icon = severity==='error' ? '✗' : '⚠';
-  li.className = `warning-entry${severity==='error'?' error':''}`;
-  li.innerHTML = `
+        bundleAbort = new AbortController();
+
+        fetch("/api/problems/bundle/stream", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ page_ids: pageIds }),
+          signal: bundleAbort.signal,
+        })
+          .then(async (resp) => {
+            if (!resp.ok) throw new Error(`Server error: ${resp.status}`);
+            const reader = resp.body.getReader();
+            const decoder = new TextDecoder();
+            let buf = "";
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              buf += decoder.decode(value, { stream: true });
+              const chunks = buf.split("\n\n");
+              buf = chunks.pop();
+              for (const chunk of chunks) {
+                const line = chunk.trim();
+                if (!line.startsWith("data: ")) continue;
+                try {
+                  handleBundleEvent(
+                    JSON.parse(line.slice(6)),
+                    pageIds,
+                    bar,
+                    counter,
+                    current,
+                    log,
+                    overlay,
+                    cancelBtn,
+                  );
+                } catch (e) {
+                  console.error("SSE parse error", line, e);
+                }
+              }
+            }
+          })
+          .catch((e) => {
+            if (e.name === "AbortError") return;
+            console.error("Bundle error:", e);
+            current.textContent = "Connection error. Please try again.";
+            current.style.color = "#dc2626";
+            bar.className = "error";
+            cancelBtn.textContent = "Close";
+            cancelBtn.onclick = closeBundleOverlay;
+            bundleActive = false;
+          });
+      }
+
+      function handleBundleEvent(
+        ev,
+        pageIds,
+        bar,
+        counter,
+        current,
+        log,
+        overlay,
+        cancelBtn,
+      ) {
+        const total = ev.total || pageIds.length;
+        const done = ev.done || 0;
+
+        if (ev.status === "starting" || ev.status === "generating") {
+          current.textContent =
+            ev.status === "generating"
+              ? `Generating ${ev.current}…`
+              : "Preparing…";
+          return;
+        }
+
+        if (["ok", "warning", "error"].includes(ev.status)) {
+          bar.style.width = `${(done / total) * 100}%`;
+          counter.textContent = `${done} / ${total}`;
+          const icon = { ok: "✓", warning: "⚠", error: "✗" }[ev.status];
+          const li = document.createElement("li");
+          li.className = `bundle-log-item status-${ev.status}`;
+          li.textContent = `${icon} ${ev.current}${ev.warnings && ev.warnings.length ? ` (${ev.warnings.length} warning${ev.warnings.length > 1 ? "s" : ""})` : ""}`;
+          log.appendChild(li);
+          if (ev.warnings)
+            ev.warnings.forEach((w) => addEntryFromCode(ev.current, w));
+          return;
+        }
+
+        if (ev.status === "done") {
+          bar.style.width = "100%";
+          bar.className = "done";
+          counter.textContent = `${total} / ${total}`;
+          const hasWarn = log.querySelector(".status-warning, .status-error");
+          if (hasWarn) {
+            current.textContent =
+              "Done — with warnings. Check the warning panel.";
+            current.style.color = "#d97706";
+          } else {
+            current.textContent = "Done! Downloading your ZIP…";
+          }
+          triggerDownload(
+            null,
+            "contest_problems.zip",
+            `/api/problems/bundle/download?token=${ev.token}`,
+          );
+          cancelBtn.textContent = "Close";
+          cancelBtn.onclick = closeBundleOverlay;
+          bundleActive = false;
+          if (!hasWarn) setTimeout(closeBundleOverlay, 3000);
+        }
+      }
+
+      function cancelBundle() {
+        if (bundleAbort) {
+          bundleAbort.abort();
+          bundleAbort = null;
+        }
+        bundleActive = false;
+        closeBundleOverlay();
+      }
+
+      function closeBundleOverlay() {
+        document.getElementById("bundle-overlay").classList.add("hidden");
+        bundleActive = false;
+      }
+
+      // ── File download helper ──────────────────────────────────────────────────
+      function triggerDownload(blob, filename, url) {
+        const a = document.createElement("a");
+        if (url) {
+          a.href = url;
+        } else {
+          a.href = URL.createObjectURL(blob);
+          setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+        }
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+
+      // ── Warning panel ─────────────────────────────────────────────────────────
+      function toggleWarningPanel() {
+        document.getElementById("warning-panel").classList.toggle("hidden");
+      }
+
+      function addEntryFromCode(problemTitle, code) {
+        let msg;
+        if (code.startsWith("missing_image:")) {
+          msg = `An image could not be downloaded and was skipped. The PDF may have a gap where the image should appear.`;
+        } else if (code.startsWith("unknown_section:")) {
+          const h = code.slice("unknown_section:".length);
+          msg = `The section heading "${h}" was not recognised and its content was excluded from the PDF. Verify the Notion page uses the correct heading text.`;
+        } else {
+          msg = code;
+        }
+        addEntry("warning", problemTitle, msg);
+      }
+
+      function addEntry(severity, problemTitle, message) {
+        const id = Date.now() + Math.random();
+        warnEntries.push({ id, severity, problemTitle, message });
+        if (severity === "error") errCount++;
+        else warnCount++;
+
+        const li = document.createElement("li");
+        li.dataset.id = id;
+
+        const icon = severity === "error" ? "✗" : "⚠";
+        li.className = `warning-entry${severity === "error" ? " error" : ""}`;
+        li.innerHTML = `
     <div class="warning-entry-header">
       <span class="warning-sev-icon">${icon}</span>
       <strong>${esc(problemTitle)}</strong>
@@ -639,40 +1146,49 @@ function addEntry(severity, problemTitle, message) {
     </div>
     <p class="warning-message">${esc(message)}</p>`;
 
-  const panelList = document.getElementById('warning-panel-list');
-  panelList.appendChild(li);
-  updateWarnTrigger();
-  // Auto-expand panel when new entry arrives
-  document.getElementById('warning-panel').classList.remove('hidden');
-}
+        const panelList = document.getElementById("warning-panel-list");
+        panelList.appendChild(li);
+        updateWarnTrigger();
+        // Auto-expand panel when new entry arrives
+        document.getElementById("warning-panel").classList.remove("hidden");
+      }
 
-function dismissEntry(id) {
-  const entry = warnEntries.find(e=>e.id===id);
-  if (entry) { if(entry.severity==='error') errCount--; else warnCount--; }
-  warnEntries = warnEntries.filter(e=>e.id!==id);
-  const el = document.querySelector(`#warning-panel-list li[data-id="${id}"]`);
-  if (el) el.remove();
-  updateWarnTrigger();
-}
+      function dismissEntry(id) {
+        const entry = warnEntries.find((e) => e.id === id);
+        if (entry) {
+          if (entry.severity === "error") errCount--;
+          else warnCount--;
+        }
+        warnEntries = warnEntries.filter((e) => e.id !== id);
+        const el = document.querySelector(
+          `#warning-panel-list li[data-id="${id}"]`,
+        );
+        if (el) el.remove();
+        updateWarnTrigger();
+      }
 
-function updateWarnTrigger() {
-  const btn   = document.getElementById('btn-warnings');
-  const total = warnCount + errCount;
-  if (total===0) { btn.className='btn-header hidden'; btn.textContent=''; return; }
-  if (errCount>0 && warnCount>0) {
-    btn.textContent = `✗ ${errCount} Error${errCount>1?'s':''}, ⚠ ${warnCount} Warning${warnCount>1?'s':''}`;
-    btn.className   = 'btn-header severity-error';
-  } else if (errCount>0) {
-    btn.textContent = `✗ ${errCount} Error${errCount>1?'s':''}`;
-    btn.className   = 'btn-header severity-error';
-  } else {
-    btn.textContent = `⚠ ${warnCount} Warning${warnCount>1?'s':''}`;
-    btn.className   = 'btn-header severity-warning';
-  }
-}
+      function updateWarnTrigger() {
+        const btn = document.getElementById("btn-warnings");
+        const total = warnCount + errCount;
+        if (total === 0) {
+          btn.className = "btn-header hidden";
+          btn.textContent = "";
+          return;
+        }
+        if (errCount > 0 && warnCount > 0) {
+          btn.textContent = `✗ ${errCount} Error${errCount > 1 ? "s" : ""}, ⚠ ${warnCount} Warning${warnCount > 1 ? "s" : ""}`;
+          btn.className = "btn-header severity-error";
+        } else if (errCount > 0) {
+          btn.textContent = `✗ ${errCount} Error${errCount > 1 ? "s" : ""}`;
+          btn.className = "btn-header severity-error";
+        } else {
+          btn.textContent = `⚠ ${warnCount} Warning${warnCount > 1 ? "s" : ""}`;
+          btn.className = "btn-header severity-warning";
+        }
+      }
 
-// ── Init ──────────────────────────────────────────────────────────────────
-loadProblems();
-</script>
-</body>
+      // ── Init ──────────────────────────────────────────────────────────────────
+      loadProblems();
+    </script>
+  </body>
 </html>

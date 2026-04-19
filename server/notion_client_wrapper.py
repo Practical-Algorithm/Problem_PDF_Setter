@@ -11,7 +11,7 @@ PROP_LETTER     = os.environ.get("NOTION_PROP_LETTER",     "Problem Letter")
 PROP_TIME       = os.environ.get("NOTION_PROP_TIME",       "Time Limit")
 PROP_MEMORY     = os.environ.get("NOTION_PROP_MEMORY",     "Memory Limit")
 PROP_DIFFICULTY = os.environ.get("NOTION_PROP_DIFFICULTY", "Difficulty")
-PROP_STATUS     = os.environ.get("NOTION_PROP_STATUS",     "Status")
+PROP_STATUS     = os.environ.get("NOTION_PROP_STATUS",     "Story")
 
 NOTION_DATABASE_ID   = os.environ.get("NOTION_DATABASE_ID", "")
 NOTION_FILTER_STATUS = os.environ.get("NOTION_FILTER_STATUS", "")
