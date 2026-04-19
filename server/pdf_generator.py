@@ -49,20 +49,41 @@ def _detect_mime(data: bytes):
     return None
 
 
-def _render_math(html: str) -> str:
-    """Convert $$...$$ (display) and $...$ (inline) LaTeX to MathML."""
-    # Process display math first to avoid double-matching inner $
-    html = re.sub(
+def _extract_math(text: str) -> tuple:
+    """Replace $$...$$ and $...$ with placeholders BEFORE markdown processing.
+
+    Markdown mangles LaTeX: underscores become <em>, asterisks become <strong>,
+    so math must be pulled out first and restored after markdown runs.
+
+    Returns (text_with_placeholders, {placeholder: mathml_string}).
+    """
+    placeholders = {}
+    counter = [0]
+
+    def _placeholder(mathml: str) -> str:
+        key = f"MATHPLACEHOLDER{counter[0]}X"
+        counter[0] += 1
+        placeholders[key] = mathml
+        return key
+
+    # Display math first to avoid matching the inner $ of $$...$$
+    text = re.sub(
         r'\$\$(.+?)\$\$',
-        lambda m: convert(m.group(1), display="block"),
-        html,
+        lambda m: _placeholder(convert(m.group(1), display="block")),
+        text,
         flags=re.DOTALL,
     )
-    html = re.sub(
+    text = re.sub(
         r'\$(.+?)\$',
-        lambda m: convert(m.group(1), display="inline"),
-        html,
+        lambda m: _placeholder(convert(m.group(1), display="inline")),
+        text,
     )
+    return text, placeholders
+
+
+def _restore_math(html: str, placeholders: dict) -> str:
+    for key, mathml in placeholders.items():
+        html = html.replace(key, mathml)
     return html
 
 
@@ -95,8 +116,9 @@ def generate_pdf(problem: dict) -> bytes:
         if not md_text:
             sections_html[key] = ""
             continue
+        md_text, math_placeholders = _extract_math(md_text)
         html = _markdown_to_html(md_text)
-        html = _render_math(html)
+        html = _restore_math(html, math_placeholders)
         html = _embed_images(html, images)
         sections_html[key] = html
 
@@ -119,3 +141,35 @@ def generate_pdf(problem: dict) -> bytes:
         font_config=_font_config,
     )
     return pdf_bytes
+
+
+def generate_html(problem: dict) -> str:
+    """Return the rendered HTML string (same pipeline as generate_pdf, without the PDF step)."""
+    sections_md = problem.get("sections", {})
+    images      = problem.get("images",   {})
+
+    sections_html = {}
+    for key, md_text in sections_md.items():
+        if not md_text:
+            sections_html[key] = ""
+            continue
+        md_text, math_placeholders = _extract_math(md_text)
+        html = _markdown_to_html(md_text)
+        html = _restore_math(html, math_placeholders)
+        html = _embed_images(html, images)
+        sections_html[key] = html
+
+    labels   = _LABELS.get(SECTION_LANG, _LABELS["th"])
+    template = _jinja_env.get_template("problem.html")
+
+    return template.render(
+        title         = problem.get("title_full", ""),
+        letter        = problem.get("letter",     ""),
+        time_limit    = problem.get("time_limit",    "1 second"),
+        memory_limit  = problem.get("memory_limit",  "256 MB"),
+        contest_name  = CONTEST_NAME,
+        contest_dates = CONTEST_DATES,
+        sections      = sections_html,
+        labels        = labels,
+        static_dir    = STATIC_DIR,
+    )

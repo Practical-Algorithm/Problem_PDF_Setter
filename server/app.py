@@ -22,7 +22,7 @@ from notion_client_wrapper import (
     NotionClientWrapper,
     _notion_call_with_retry,
 )
-from pdf_generator import generate_pdf, TEMPLATES_DIR, CONTEST_NAME
+from pdf_generator import generate_pdf, generate_html, TEMPLATES_DIR, CONTEST_NAME
 
 # ---------------------------------------------------------------------------
 # App & auth setup
@@ -166,6 +166,19 @@ def get_problem_pdf(page_id):
 
     except Exception as e:
         app.logger.exception(f"Error generating PDF for {page_id}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/problems/<page_id>/html")
+@auth.login_required
+def get_problem_html(page_id):
+    """Return the intermediate HTML for debugging (skips PDF conversion)."""
+    try:
+        problem  = notion.get_problem(page_id)
+        html_str = generate_html(problem)
+        return Response(html_str, mimetype="text/html")
+    except Exception as e:
+        app.logger.exception(f"Error generating HTML for {page_id}")
         return jsonify({"error": str(e)}), 500
 
 

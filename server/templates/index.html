@@ -672,6 +672,7 @@
       </div>
       <div style="display:flex;gap:6px;justify-content:flex-end">
         <button class="btn btn-icon btn-refresh" data-id="${esc(p.id)}" title="Re-fetch from Notion" onclick="handleRefresh('${esc(p.id)}','${esc(p.title)}')">${_ico.refresh}</button>
+        <a class="btn btn-secondary btn-sm" href="/api/problems/${esc(p.id)}/html" target="_blank" title="Preview HTML (debug)">HTML</a>
         <button class="btn btn-secondary btn-sm btn-pdf" data-id="${esc(p.id)}" onclick="handlePdf('${esc(p.id)}','${esc(p.title)}','${esc(p.title_en || p.title)}')">${_ico.download} PDF</button>
       </div>`;
     return div;

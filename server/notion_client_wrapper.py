@@ -80,6 +80,12 @@ def _parse_title(raw_title: str) -> dict:
 def _rich_text_to_markdown(rich_text_list: list) -> str:
     parts = []
     for rt in rich_text_list:
+        # Notion inline equations have type "equation" — wrap in $...$
+        if rt.get("type") == "equation":
+            expr = rt.get("equation", {}).get("expression", rt.get("plain_text", ""))
+            parts.append(f"${expr}$")
+            continue
+
         text = rt.get("plain_text", "")
         ann  = rt.get("annotations", {})
         bold   = ann.get("bold",   False)
@@ -324,6 +330,10 @@ class NotionClientWrapper:
         if btype == "callout":
             text = _rich_text_to_markdown(block["callout"].get("rich_text", []))
             return f"> **Note:** {text}"
+
+        if btype == "equation":
+            expr = block["equation"].get("expression", "")
+            return f"$${expr}$$"
 
         if btype == "divider":
             return "---"
