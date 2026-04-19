@@ -82,15 +82,19 @@ def validate_startup() -> None:
             "APP_PASSWORD environment variable is not set. Refusing to start."
         )
 
-    db       = _notion_call_with_retry(notion.client.databases.retrieve, database_id=NOTION_DATABASE_ID)
-    existing = set(db["properties"].keys())
-    required = {PROP_TITLE, PROP_LETTER, PROP_TIME, PROP_MEMORY}
-    missing  = required - existing
-    if missing:
+    try:
+        db = _notion_call_with_retry(notion.client.databases.retrieve, database_id=NOTION_DATABASE_ID)
+    except Exception as e:
+        raise RuntimeError(f"Cannot reach Notion database '{NOTION_DATABASE_ID}': {e}")
+
+    obj_type = db.get("object", "unknown")
+    if obj_type != "database":
         raise RuntimeError(
-            f"Notion database is missing expected properties: {missing}. "
-            f"Check your NOTION_PROP_* environment variables."
+            f"NOTION_DATABASE_ID does not point to a database (got '{obj_type}'). "
+            f"Verify the ID and that the integration has been added to the database in Notion."
         )
+
+    app.logger.info(f"Notion database reachable. Title: {db.get('title', [{}])[0].get('plain_text', '(untitled)')}")
 
 
 # ---------------------------------------------------------------------------

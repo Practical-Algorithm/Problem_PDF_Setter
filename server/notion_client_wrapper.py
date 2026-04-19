@@ -28,6 +28,9 @@ _SECTION_MAP_LOWER = {
 }
 
 
+_NOTION_API_VERSION = "2022-06-28"
+
+
 def _notion_call_with_retry(fn, *args, **kwargs):
     for attempt in range(4):  # 1 attempt + 3 retries
         try:
@@ -37,6 +40,28 @@ def _notion_call_with_retry(fn, *args, **kwargs):
                 time.sleep(2 ** attempt)  # 1s, 2s, 4s
                 continue
             raise
+
+
+def _query_database(database_id: str, body: dict) -> dict:
+    """POST /v1/databases/{id}/query via requests (databases.query removed in newer SDK)."""
+    token = os.environ.get("NOTION_TOKEN", "")
+    for attempt in range(4):
+        resp = requests.post(
+            f"https://api.notion.com/v1/databases/{database_id}/query",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Notion-Version": _NOTION_API_VERSION,
+                "Content-Type": "application/json",
+            },
+            json=body,
+            timeout=30,
+        )
+        if resp.status_code == 429 and attempt < 3:
+            time.sleep(2 ** attempt)
+            continue
+        resp.raise_for_status()
+        return resp.json()
+    resp.raise_for_status()  # final raise if all retries exhausted on 429
 
 
 def _parse_title(raw_title: str) -> dict:
@@ -84,6 +109,19 @@ def _detect_mime(data: bytes):
     return None
 
 
+def _find_title_prop(props: dict) -> dict:
+    """Return the title-type property dict, regardless of its display name."""
+    # Try the configured name first
+    candidate = props.get(PROP_TITLE, {})
+    if candidate.get("type") == "title":
+        return candidate
+    # Fallback: scan for any property whose type is "title"
+    for prop in props.values():
+        if prop.get("type") == "title":
+            return prop
+    return {}
+
+
 def _get_rich_text_value(props: dict, key: str, default: str = "") -> str:
     prop = props.get(key, {})
     if prop.get("type") == "rich_text":
@@ -114,10 +152,10 @@ class NotionClientWrapper:
             }
 
         while True:
-            kwargs = {"database_id": self.database_id, **filter_params}
+            body = {**filter_params}
             if cursor:
-                kwargs["start_cursor"] = cursor
-            response = _notion_call_with_retry(self.client.databases.query, **kwargs)
+                body["start_cursor"] = cursor
+            response = _query_database(self.database_id, body)
             results.extend(response["results"])
             if not response.get("has_more"):
                 break
@@ -127,12 +165,10 @@ class NotionClientWrapper:
         for page in results:
             props = page["properties"]
 
-            title_prop = props.get(PROP_TITLE, {})
-            raw_title  = ""
-            if title_prop.get("type") == "title":
-                raw_title = "".join(
-                    rt.get("plain_text", "") for rt in title_prop.get("title", [])
-                )
+            title_prop = _find_title_prop(props)
+            raw_title  = "".join(
+                rt.get("plain_text", "") for rt in title_prop.get("title", [])
+            )
             title_info = _parse_title(raw_title)
 
             letter      = _get_rich_text_value(props, PROP_LETTER)
@@ -173,12 +209,10 @@ class NotionClientWrapper:
         page  = _notion_call_with_retry(self.client.pages.retrieve, page_id=page_id)
         props = page["properties"]
 
-        title_prop = props.get(PROP_TITLE, {})
-        raw_title  = ""
-        if title_prop.get("type") == "title":
-            raw_title = "".join(
-                rt.get("plain_text", "") for rt in title_prop.get("title", [])
-            )
+        title_prop   = _find_title_prop(props)
+        raw_title    = "".join(
+            rt.get("plain_text", "") for rt in title_prop.get("title", [])
+        )
         title_info   = _parse_title(raw_title)
         letter       = _get_rich_text_value(props, PROP_LETTER)
         time_limit   = _get_rich_text_value(props, PROP_TIME,   "1 second") or "1 second"
