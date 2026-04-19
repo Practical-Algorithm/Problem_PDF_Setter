@@ -1,0 +1,9 @@
+flask
+flask-httpauth
+gunicorn
+notion-client
+markdown
+latex2mathml
+weasyprint
+requests
+python-dotenv
