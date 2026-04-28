@@ -1,6 +1,7 @@
 import os
 import re
 import base64
+import xml.etree.ElementTree as ET
 import markdown
 from jinja2 import Environment, FileSystemLoader
 from weasyprint import HTML
@@ -87,6 +88,109 @@ def _restore_math(html: str, placeholders: dict) -> str:
     return html
 
 
+def _mathml_to_html(mathml: str) -> str:
+    """Convert a MathML string to HTML using <sub>/<sup> for WeasyPrint.
+
+    WeasyPrint's native MathML rendering of <msub>/<msup> is unreliable —
+    children render inline at the same size/baseline.  Replacing them with
+    HTML <sub>/<sup> (which WeasyPrint handles correctly) fixes this.
+    """
+    def _tag(elem):
+        t = elem.tag
+        return t.split('}', 1)[1] if '}' in t else t
+
+    def _conv(elem):
+        tag  = _tag(elem)
+        text = elem.text or ''
+        kids = list(elem)
+
+        def ch():
+            return ''.join(_conv(c) for c in kids)
+
+        if tag == 'math':
+            display = elem.get('display', 'inline')
+            cls = 'math-block' if display == 'block' else 'math-inline'
+            return f'<span class="{cls}">{ch()}</span>'
+        if tag == 'mrow':
+            return ch()
+        if tag == 'mi':
+            return f'<span class="math-mi">{text}</span>'
+        if tag == 'mn':
+            return f'<span class="math-mn">{text}</span>'
+        if tag == 'mo':
+            return f'<span class="math-mo">{text}{ch()}</span>'
+        if tag == 'mtext':
+            return f'<span class="math-text">{text}</span>'
+        if tag == 'mspace':
+            w = elem.get('width', '0.22em')
+            return f'<span style="display:inline-block;width:{w}"></span>'
+        if tag in ('mstyle', 'mpadded', 'mphantom', 'merror'):
+            return ch()
+        if tag == 'semantics' and kids:
+            return _conv(kids[0])
+
+        if tag == 'msub' and len(kids) == 2:
+            return f'{_conv(kids[0])}<sub class="math-sub">{_conv(kids[1])}</sub>'
+        if tag == 'msup' and len(kids) == 2:
+            return f'{_conv(kids[0])}<sup class="math-sup">{_conv(kids[1])}</sup>'
+        if tag == 'msubsup' and len(kids) == 3:
+            return (f'{_conv(kids[0])}'
+                    f'<sub class="math-sub">{_conv(kids[1])}</sub>'
+                    f'<sup class="math-sup">{_conv(kids[2])}</sup>')
+        if tag == 'munder' and len(kids) == 2:
+            return f'{_conv(kids[0])}<sub class="math-sub">{_conv(kids[1])}</sub>'
+        if tag == 'mover' and len(kids) == 2:
+            return f'{_conv(kids[0])}<sup class="math-sup">{_conv(kids[1])}</sup>'
+        if tag == 'munderover' and len(kids) == 3:
+            return (f'{_conv(kids[0])}'
+                    f'<sub class="math-sub">{_conv(kids[1])}</sub>'
+                    f'<sup class="math-sup">{_conv(kids[2])}</sup>')
+
+        if tag == 'mfrac' and len(kids) == 2:
+            return (f'<span class="math-frac">'
+                    f'<span class="math-num">{_conv(kids[0])}</span>'
+                    f'<span class="math-den">{_conv(kids[1])}</span>'
+                    f'</span>')
+        if tag == 'msqrt':
+            return f'√<span class="math-sqrt">{ch()}</span>'
+        if tag == 'mroot' and len(kids) == 2:
+            return f'<sup class="math-sup math-root-idx">{_conv(kids[1])}</sup>√{_conv(kids[0])}'
+
+        # Fallback: pass text content + children through
+        return text + ch()
+
+    try:
+        root = ET.fromstring(mathml)
+        return _conv(root)
+    except ET.ParseError:
+        return mathml  # leave original MathML on parse error
+
+
+def _extract_math_pdf(text: str) -> tuple:
+    """Like _extract_math but placeholders hold HTML (not MathML) for WeasyPrint."""
+    placeholders = {}
+    counter = [0]
+
+    def _placeholder(html: str) -> str:
+        key = f"MATHPLACEHOLDER{counter[0]}X"
+        counter[0] += 1
+        placeholders[key] = html
+        return key
+
+    text = re.sub(
+        r'\$\$(.+?)\$\$',
+        lambda m: _placeholder(_mathml_to_html(convert(m.group(1), display="block"))),
+        text,
+        flags=re.DOTALL,
+    )
+    text = re.sub(
+        r'\$(.+?)\$',
+        lambda m: _placeholder(_mathml_to_html(convert(m.group(1), display="inline"))),
+        text,
+    )
+    return text, placeholders
+
+
 def _embed_images(html: str, images: dict) -> str:
     """Replace notion-img-* placeholder src values with base64 data URIs."""
     for placeholder, img_bytes in images.items():
@@ -116,7 +220,7 @@ def generate_pdf(problem: dict) -> bytes:
         if not md_text:
             sections_html[key] = ""
             continue
-        md_text, math_placeholders = _extract_math(md_text)
+        md_text, math_placeholders = _extract_math_pdf(md_text)
         html = _markdown_to_html(md_text)
         html = _restore_math(html, math_placeholders)
         html = _embed_images(html, images)
