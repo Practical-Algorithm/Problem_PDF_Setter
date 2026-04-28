@@ -362,15 +362,51 @@ class NotionClientWrapper:
                 break
             cursor = response["next_cursor"]
 
-        lines = []
-        for i, row in enumerate(rows):
-            cells      = row.get("table_row", {}).get("cells", [])
-            cell_texts = [_rich_text_to_markdown(cell) for cell in cells]
-            lines.append("| " + " | ".join(cell_texts) + " |")
-            if i == 0:
-                lines.append("| " + " | ".join(["---"] * len(cells)) + " |")
+        if not rows:
+            return ""
 
-        return "\n".join(lines)
+        def _cell(cells, idx):
+            return _rich_text_to_markdown(cells[idx]) if idx < len(cells) else ""
+
+        parsed = [
+            (_cell(r.get("table_row", {}).get("cells", []), 0),
+             _cell(r.get("table_row", {}).get("cells", []), 1))
+            for r in rows
+        ]
+
+        header = parsed[0]
+        data   = parsed[1:]
+
+        # Notion may split a logical test-case row into multiple table rows:
+        # continuation input lines appear as col1-only rows, and the final
+        # row carries both the last input line and the (possibly multiline)
+        # output.  Accumulate col1/col2 lines and flush when a both-filled
+        # row is encountered (it ends the group, not starts a new one).
+        groups = []
+        pending_col1, pending_col2 = [], []
+
+        for col1, col2 in data:
+            if col1.strip() and col2.strip():
+                pending_col1.append(col1)
+                pending_col2.append(col2)
+                groups.append(("\n".join(pending_col1), "\n".join(pending_col2)))
+                pending_col1, pending_col2 = [], []
+            elif col1.strip():
+                pending_col1.append(col1)
+            elif col2.strip():
+                pending_col2.append(col2)
+
+        if pending_col1 or pending_col2:
+            groups.append(("\n".join(pending_col1), "\n".join(pending_col2)))
+
+        # Emit as a raw HTML table so newlines inside cells are preserved
+        # by the CSS `white-space: pre` rule on table td/th elements.
+        html = ["<table>"]
+        html.append(f"<tr><th>{header[0]}</th><th>{header[1]}</th></tr>")
+        for col1, col2 in groups:
+            html.append(f"<tr><td>{col1}</td><td>{col2}</td></tr>")
+        html.append("</table>")
+        return "".join(html)
 
     def _fetch_image(self, block: dict, images: dict, warnings: list) -> str:
         img      = block.get("image", {})
