@@ -269,16 +269,15 @@ class NotionClientWrapper:
         for block in blocks:
             btype = block.get("type", "")
 
-            if btype == "heading_1":
-                # Treated as section boundary, not emitted
+            if btype in ("heading_1", "heading_2"):
+                # Not used as section separators — skip silently
                 continue
 
-            if btype == "heading_2":
+            if btype == "heading_3":
                 heading_text = "".join(
                     rt.get("plain_text", "")
-                    for rt in block["heading_2"].get("rich_text", [])
+                    for rt in block["heading_3"].get("rich_text", [])
                 ).strip()
-                # Exact Thai match
                 if heading_text in _SECTION_MAP_EXACT:
                     current_section = _SECTION_MAP_EXACT[heading_text]
                 elif heading_text.lower() in _SECTION_MAP_LOWER:
@@ -303,10 +302,6 @@ class NotionClientWrapper:
 
         if btype == "paragraph":
             return _rich_text_to_markdown(block["paragraph"].get("rich_text", []))
-
-        if btype == "heading_3":
-            text = _rich_text_to_markdown(block["heading_3"].get("rich_text", []))
-            return f"### {text}"
 
         if btype == "bulleted_list_item":
             text = _rich_text_to_markdown(block["bulleted_list_item"].get("rich_text", []))
