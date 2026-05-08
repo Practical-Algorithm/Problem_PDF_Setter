@@ -360,46 +360,57 @@ class NotionClientWrapper:
         if not rows:
             return ""
 
-        def _cell(cells, idx):
-            return _rich_text_to_markdown(cells[idx]) if idx < len(cells) else ""
+        def _parse_row(row):
+            cells = row.get("table_row", {}).get("cells", [])
+            return [_rich_text_to_markdown(c) for c in cells]
 
-        parsed = [
-            (_cell(r.get("table_row", {}).get("cells", []), 0),
-             _cell(r.get("table_row", {}).get("cells", []), 1))
-            for r in rows
-        ]
+        def _escape_cell(text):
+            # _rich_text_to_markdown now emits safe HTML directly (all plain text
+            # already has <, >, & escaped and formatting uses HTML tags), so
+            # the content can be inserted into <td>/<th> as-is.
+            return text
 
-        header = parsed[0]
-        data   = parsed[1:]
-
-        # Notion may split a logical test-case row into multiple table rows:
-        # continuation input lines appear as col1-only rows, and the final
-        # row carries both the last input line and the (possibly multiline)
-        # output.  Accumulate col1/col2 lines and flush when a both-filled
-        # row is encountered (it ends the group, not starts a new one).
-        groups = []
-        pending_col1, pending_col2 = [], []
-
-        for col1, col2 in data:
-            if col1.strip() and col2.strip():
-                pending_col1.append(col1)
-                pending_col2.append(col2)
-                groups.append(("\n".join(pending_col1), "\n".join(pending_col2)))
-                pending_col1, pending_col2 = [], []
-            elif col1.strip():
-                pending_col1.append(col1)
-            elif col2.strip():
-                pending_col2.append(col2)
-
-        if pending_col1 or pending_col2:
-            groups.append(("\n".join(pending_col1), "\n".join(pending_col2)))
+        parsed  = [_parse_row(r) for r in rows]
+        header  = parsed[0]
+        data    = parsed[1:]
+        n_cols  = table_block.get("table", {}).get("table_width", len(header))
 
         # Emit as a raw HTML table so newlines inside cells are preserved
-        # by the CSS `white-space: pre` rule on table td/th elements.
+        # by the CSS `white-space: pre-wrap` rule on table td/th elements.
         html = ["<table>"]
-        html.append(f"<tr><th>{header[0]}</th><th>{header[1]}</th></tr>")
-        for col1, col2 in groups:
-            html.append(f"<tr><td>{col1}</td><td>{col2}</td></tr>")
+        html.append("<tr>" + "".join(f"<th>{_escape_cell(c)}</th>" for c in header) + "</tr>")
+
+        if n_cols == 2:
+            # Notion may split a logical test-case row into multiple table rows:
+            # continuation input lines appear as col1-only rows, and the final
+            # row carries both the last input line and the (possibly multiline)
+            # output.  Accumulate col1/col2 lines and flush when a both-filled
+            # row is encountered (it ends the group, not starts a new one).
+            groups = []
+            pending_col1, pending_col2 = [], []
+
+            for row_cells in data:
+                col1 = row_cells[0] if len(row_cells) > 0 else ""
+                col2 = row_cells[1] if len(row_cells) > 1 else ""
+                if col1.strip() and col2.strip():
+                    pending_col1.append(col1)
+                    pending_col2.append(col2)
+                    groups.append(("\n".join(pending_col1), "\n".join(pending_col2)))
+                    pending_col1, pending_col2 = [], []
+                elif col1.strip():
+                    pending_col1.append(col1)
+                elif col2.strip():
+                    pending_col2.append(col2)
+
+            if pending_col1 or pending_col2:
+                groups.append(("\n".join(pending_col1), "\n".join(pending_col2)))
+
+            for col1, col2 in groups:
+                html.append(f"<tr><td>{_escape_cell(col1)}</td><td>{_escape_cell(col2)}</td></tr>")
+        else:
+            for row_cells in data:
+                html.append("<tr>" + "".join(f"<td>{_escape_cell(c)}</td>" for c in row_cells) + "</tr>")
+
         html.append("</table>")
         return "".join(html)
 
