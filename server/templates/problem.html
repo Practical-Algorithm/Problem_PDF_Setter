@@ -320,6 +320,11 @@
       <h2 class="section-heading">{{ labels.constraints }}</h2>
       {{ sections.constraints | safe }}
     </div>
+    {% endif %} {% if sections.subtasks %}
+    <div class="section">
+      <h2 class="section-heading">{{ labels.subtasks }}</h2>
+      {{ sections.subtasks | safe }}
+    </div>
     {% endif %} {% if sections.examples %}
     <div class="section">
       <h2 class="section-heading">{{ labels.examples }}</h2>

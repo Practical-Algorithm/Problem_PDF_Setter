@@ -20,11 +20,13 @@ NOTION_FILTER_STATUS = os.environ.get("NOTION_FILTER_STATUS", "")
 _SECTION_MAP_EXACT = {
     "ข้อมูลนำเข้า": "input",
     "ข้อมูลส่งออก": "output",
-    "การให้คะแนน":  "constraints",
+    "ขอบเขตของข้อมูล":  "constraints",
+    "การให้คะแนน": "subtasks"
 }
 _SECTION_MAP_LOWER = {
     "constraints":        "constraints",
     "sample input/output": "examples",
+    "subtasks": "subtasks",
 }
 
 
@@ -259,7 +261,7 @@ class NotionClientWrapper:
         return blocks
 
     def _parse_blocks(self, blocks: list) -> tuple:
-        section_order = ["statement", "input", "output", "constraints", "examples"]
+        section_order = ["statement", "input", "output", "constraints", "subtasks", "examples"]
         section_lines = {s: [] for s in section_order}
         images   = {}
         warnings = []
